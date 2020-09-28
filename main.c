@@ -1,8 +1,15 @@
 #include <stdio.h>
 #include <string.h>
 #include <getopt.h>
-#include <omp.h>
 #include <stdlib.h>
+
+#ifdef COMPILE_OPENMP
+
+#include <omp.h>
+
+#endif
+
+#include "calcpi.h"
 #include "timer.h"
 
 #define PI 3.14159265358979323846264
@@ -18,17 +25,26 @@ void print_help(char *cmd) {
     printf("Available options:\n");
     printf("-h        Show this help menu\n");
     printf("-v        Enable verbose printing\n");
+#ifdef COMPILE_OPENMP
     printf("-t [num]  Set the amount of threads to use. Use 0 for maximum available.\n"
-                  "          Default: amount of threads available on the system (Here: %d)\n", omp_get_max_threads());
+           "          Default: amount of threads available on the system (Here: %d)\n", omp_get_max_threads());
+#endif
     printf("-i [num]  Set the amount of iterations to run. Default: %d\n", default_iterations);
 }
 
 int main(int argc, char *argv[]) {
     int iterations = default_iterations;
+#ifdef COMPILE_OPENMP
     int threads = omp_get_max_threads();
+#endif
     int quiet = 1;
     int option;
-    while ((option = getopt(argc, argv, ":i:t:vh")) != -1) {
+#ifdef COMPILE_OPENMP
+    const char* opts = ":i:t:vh";
+#else
+    const char* opts = ":i:vh";
+#endif
+    while ((option = getopt(argc, argv, opts)) != -1) {
         switch (option) {
             case 'i': {
                 char end_char;
@@ -40,6 +56,7 @@ int main(int argc, char *argv[]) {
                 }
                 break;
             }
+#ifdef COMPILE_OPENMP
             case 't': {
                 char end_char;
                 char *end_ptr = &end_char;
@@ -53,6 +70,7 @@ int main(int argc, char *argv[]) {
                 }
                 break;
             }
+#endif
             case 'v':
                 quiet = 0;
                 break;
@@ -67,35 +85,33 @@ int main(int argc, char *argv[]) {
             }
         }
     }
-
+#ifdef COMPILE_OPENMP
     omp_set_num_threads(threads);
+#endif
 
     timekeeper_t timer;
     starttimer(&timer);
-
-
-    double mypi = 0.0;
-    double n_i;
-    double m = 1.0 / (double) iterations;
-    //OMP can intelligently figure out whether the variables should be shared or private, but it is good to write
-    //it down explicitly anyways
-#pragma omp parallel for reduction(+: mypi) shared(m) private(n_i)
-    for (int i = 0; i < iterations; i++) {
-        n_i = ((double) i + 0.5) * m;
-        mypi += 4.0 / (1.0 + n_i * n_i);
-    }
-
-    mypi *= m;
+    double mypi = calc_pi(iterations);
     stoptimer(&timer);
     if (!quiet) {
         printf("Computation took %li.%06li seconds\n", timer.seconds, timer.nanos / 1000);
+#ifdef COMPILE_OPENMP
         printf("Performed %d iterations using %d threads.\n", iterations, threads);
+#else
+        printf("Performed %d iterations.\n", iterations);
+#endif
         printf("     MyPI = %.20lf\n", mypi);
         printf("MyPI - PI = %.20lf\n", (mypi - PI));
     } else {
         // Output format:
-        // s.micros, iter, thrd, pi, diff
+        // With openmp: s.micros, iter, thrd, pi, diff
+        // With cuda:
+#ifdef COMPILE_OPENMP
         printf("%li.%06li, %d, %d, %.20lf, %.20lf\n", timer.seconds, timer.nanos / 1000, iterations, threads, mypi,
                mypi - PI);
+#else
+        printf("%li.%06li, %d, %.20lf, %.20lf\n", timer.seconds, timer.nanos / 1000, iterations, mypi,
+               mypi - PI);
+#endif
     }
 }
