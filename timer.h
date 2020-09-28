@@ -13,7 +13,6 @@ typedef struct {
     struct timespec stop;
     uint64_t seconds;
     uint64_t nanos;
-    uint64_t millis;
 } timekeeper_t;
 
 void starttimer(timekeeper_t *);

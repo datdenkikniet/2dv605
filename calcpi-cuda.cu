@@ -1,5 +1,8 @@
-#include <cstdio>
+extern "C" {
+
 #include <cuda.h>
+#include <cstdio>
+#include "timer.h"
 
 __global__ void pi_iter(const int *offset, const int *iterations, const double *m, double *pieparts) {
     unsigned int index = blockIdx.x * blockDim.x + threadIdx.x + *offset;
@@ -46,15 +49,11 @@ double do_calcpi(int worksize, int iterations) {
         }
     }
     mypi *= m;
-
     cudaFree(device_pieparts);
     free(host_pieparts);
 
     return mypi;
 }
-
-extern "C" {
-
 double calc_pi(int worksize, int iterations) {
     return do_calcpi(worksize, iterations);
 }
