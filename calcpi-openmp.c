@@ -1,4 +1,7 @@
-double calc_pi(int iterations) {
+#include <omp.h>
+
+double calc_pi(int worksize, int iterations) {
+    omp_set_num_threads(worksize);
     double mypi = 0.0;
     double n_i;
     double m = 1.0 / (double) iterations;

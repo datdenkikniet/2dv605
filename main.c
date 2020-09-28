@@ -18,6 +18,7 @@
 // causing lots of memory-waiting. Run tests!
 
 const int default_iterations = 192000000;
+const int default_batch_size = 1000000;
 
 void print_help(char *cmd) {
     printf("Program for calculating PI in parallel, using OpenMP.\n");
@@ -25,37 +26,35 @@ void print_help(char *cmd) {
     printf("Available options:\n");
     printf("-h        Show this help menu\n");
     printf("-v        Enable verbose printing\n");
+    printf("-i [num]  Set the amount of iterations to run. Default: %d\n", default_iterations);
 #ifdef COMPILE_OPENMP
     printf("-t [num]  Set the amount of threads to use. Use 0 for maximum available.\n"
            "          Default: amount of threads available on the system (Here: %d)\n", omp_get_max_threads());
 #endif
-    printf("-i [num]  Set the amount of iterations to run. Default: %d\n", default_iterations);
+#ifdef COMPILE_CUDA
+    printf("-b [num]  Set the batch size for this program. Default: %d\n", default_batch_size);
+#endif
 }
 
 int main(int argc, char *argv[]) {
-    int iterations = default_iterations;
 #ifdef COMPILE_OPENMP
     int threads = omp_get_max_threads();
 #endif
+#ifdef COMPILE_CUDA
+    int batch_size = default_batch_size;
+#endif
+    int iterations = default_iterations;
     int quiet = 1;
     int option;
+
 #ifdef COMPILE_OPENMP
     const char* opts = ":i:t:vh";
-#else
-    const char* opts = ":i:vh";
+#endif
+#ifdef COMPILE_CUDA
+    const char *opts = ":i:b:vh";
 #endif
     while ((option = getopt(argc, argv, opts)) != -1) {
         switch (option) {
-            case 'i': {
-                char end_char;
-                char *end_ptr = &end_char;
-                iterations = (int) strtol(optarg, &end_ptr, 10);
-                if (iterations < 0 || end_ptr != optarg + strlen(optarg)) {
-                    printf("Invalid iteration count\n");
-                    return 1;
-                }
-                break;
-            }
 #ifdef COMPILE_OPENMP
             case 't': {
                 char end_char;
@@ -71,6 +70,28 @@ int main(int argc, char *argv[]) {
                 break;
             }
 #endif
+#ifdef COMPILE_CUDA
+            case 't': {
+                char end_char;
+                char *end_ptr = &end_char;
+                batch_size = (int) strtol(optarg, &end_ptr, 10);
+                if (iterations < 0 || end_ptr != optarg + strlen(optarg)) {
+                    printf("Invalid batch size\n");
+                    return 1;
+                }
+                break;
+            }
+#endif
+            case 'i': {
+                char end_char;
+                char *end_ptr = &end_char;
+                iterations = (int) strtol(optarg, &end_ptr, 10);
+                if (iterations < 0 || end_ptr != optarg + strlen(optarg)) {
+                    printf("Invalid iteration count\n");
+                    return 1;
+                }
+                break;
+            }
             case 'v':
                 quiet = 0;
                 break;
@@ -85,32 +106,36 @@ int main(int argc, char *argv[]) {
             }
         }
     }
-#ifdef COMPILE_OPENMP
-    omp_set_num_threads(threads);
-#endif
-
     timekeeper_t timer;
     starttimer(&timer);
-    double mypi = calc_pi(iterations);
+    double mypi;
+#ifdef COMPILE_OPENMP
+    mypi = calc_pi(iterations);
+#endif
+#ifdef COMPILE_CUDA
+    mypi = calc_pi(batch_size, iterations);
+#endif
     stoptimer(&timer);
     if (!quiet) {
-        printf("Computation took %li.%06li seconds\n", timer.seconds, timer.nanos / 1000);
 #ifdef COMPILE_OPENMP
         printf("Performed %d iterations using %d threads.\n", iterations, threads);
-#else
+#endif
+#ifdef COMPILE_CUDA
         printf("Performed %d iterations.\n", iterations);
 #endif
+        printf("Computation took %li.%06li seconds\n", timer.seconds, timer.nanos / 1000);
         printf("     MyPI = %.20lf\n", mypi);
         printf("MyPI - PI = %.20lf\n", (mypi - PI));
     } else {
         // Output format:
         // With openmp: s.micros, iter, thrd, pi, diff
-        // With cuda:
+        // With cuda: s.micros, iter, bsize, pi, diff
 #ifdef COMPILE_OPENMP
         printf("%li.%06li, %d, %d, %.20lf, %.20lf\n", timer.seconds, timer.nanos / 1000, iterations, threads, mypi,
                mypi - PI);
-#else
-        printf("%li.%06li, %d, %.20lf, %.20lf\n", timer.seconds, timer.nanos / 1000, iterations, mypi,
+#endif
+#ifdef COMPILE_CUDA
+        printf("%li.%06li, %d, %d, %.20lf, %.20lf\n", timer.seconds, timer.nanos / 1000, iterations, batch_size, mypi,
                mypi - PI);
 #endif
     }

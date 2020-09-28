@@ -9,10 +9,9 @@ __global__ void pi_iter(const int *offset, const int *iterations, const double *
     }
 }
 
-// TODO No worky if > 48000000 iterations
 // Add extra timers to determine actual computation time (and exclude malloc time)
-double do_calcpi(int iterations) {
-#define BATCH_SIZE 1000000
+double do_calcpi(int worksize, int iterations) {
+    int BATCH_SIZE = worksize;
     int *device_offset;
     cudaMalloc(&device_offset, sizeof(int));
 
@@ -56,8 +55,8 @@ double do_calcpi(int iterations) {
 
 extern "C" {
 
-double calc_pi(int iterations) {
-    return do_calcpi(iterations);
+double calc_pi(int worksize, int iterations) {
+    return do_calcpi(worksize, iterations);
 }
 
 };

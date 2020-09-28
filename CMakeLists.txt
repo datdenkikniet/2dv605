@@ -13,6 +13,6 @@ if (CMAKE_CUDA_COMPILER)
     set(CMAKE_CUDA_STANDARD 14)
     set(CMAKE_CUDA_HOST_COMPILER nvcc)
     set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -DCOMPILE_CUDA")
-
     add_executable(2dv605_cuda main.c timer.h timer.c calcpi.h calcpi-cuda.cu)
+    target_compile_options(2dv605_cuda PRIVATE $<$<COMPILE_LANGUAGE:C>:-DCOMPILE_CUDA>)
 endif ()
