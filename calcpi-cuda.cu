@@ -1,3 +1,4 @@
+#include <cstdio>
 extern "C" {
 
 __global__ void bruh() {
@@ -5,9 +6,7 @@ __global__ void bruh() {
 }
 
 double calc_pi(int iterations) {
-    for (int i = 0; i < iterations; i++) {
-        bruh<<<3, 4>>>();
-    }
+    printf("Bruh\n");
     return 3.14;
 }
 
