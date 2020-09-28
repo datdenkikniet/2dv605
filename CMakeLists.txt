@@ -7,6 +7,7 @@ set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fopenmp")
 add_executable(2dv605_openmp main.c timer.h timer.c calcpi.h calcpi-openmp.c)
 target_compile_options(2dv605_openmp PRIVATE $<$<COMPILE_LANGUAGE:C>:-DCOMPILE_OPENMP>)
 
+# Disable the CUDA project if a CUDA compiler cannot be found
 if (CMAKE_CUDA_COMPILER)
     project(2dv605_cuda CUDA)
     set(CMAKE_CUDA_STANDARD 14)
