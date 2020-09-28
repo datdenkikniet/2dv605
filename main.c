@@ -18,7 +18,7 @@
 // causing lots of memory-waiting. Run tests!
 
 const int default_iterations = 192000000;
-const int default_batch_size = 1000000;
+const int default_batch_size = 10000000;
 
 void print_help(char *cmd) {
 #ifdef COMPILE_OPENMP
