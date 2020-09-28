@@ -21,7 +21,11 @@ const int default_iterations = 192000000;
 const int default_batch_size = 1000000;
 
 void print_help(char *cmd) {
+#ifdef COMPILE_OPENMP
     printf("Program for calculating PI in parallel, using OpenMP.\n");
+#elif COMPILE_CUDA
+    printf("Program for calculating PI in parallel, using CUDA.\n");
+#endif
     printf("Command format: %s [options]\n", cmd);
     printf("Available options:\n");
     printf("-h        Show this help menu\n");
@@ -71,7 +75,7 @@ int main(int argc, char *argv[]) {
             }
 #endif
 #ifdef COMPILE_CUDA
-            case 't': {
+            case 'b': {
                 char end_char;
                 char *end_ptr = &end_char;
                 batch_size = (int) strtol(optarg, &end_ptr, 10);
@@ -110,7 +114,7 @@ int main(int argc, char *argv[]) {
     starttimer(&timer);
     double mypi;
 #ifdef COMPILE_OPENMP
-    mypi = calc_pi(iterations);
+    mypi = calc_pi(threads, iterations);
 #endif
 #ifdef COMPILE_CUDA
     mypi = calc_pi(batch_size, iterations);
@@ -121,7 +125,7 @@ int main(int argc, char *argv[]) {
         printf("Performed %d iterations using %d threads.\n", iterations, threads);
 #endif
 #ifdef COMPILE_CUDA
-        printf("Performed %d iterations.\n", iterations);
+        printf("Performed %d iterations using %d worksize.\n", iterations, batch_size);
 #endif
         printf("Computation took %li.%06li seconds\n", timer.seconds, timer.nanos / 1000);
         printf("     MyPI = %.20lf\n", mypi);
