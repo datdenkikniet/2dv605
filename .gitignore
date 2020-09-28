@@ -1,2 +1,5 @@
 /cmake-build-*/
 /.idea/
+*.o
+calcpi-openmp
+calcpi-cuda
