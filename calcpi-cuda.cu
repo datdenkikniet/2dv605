@@ -9,6 +9,7 @@ __global__ void pi_iter(int iterations, double m, double *pieparts) {
     }
 }
 
+// TODO No worky if > 48000000 iterations
 // Add extra timers to determine actual computation time (and exclude malloc time)
 double do_calcpi(int iterations) {
     double *device_pieparts;
