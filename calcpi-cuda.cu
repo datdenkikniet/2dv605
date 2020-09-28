@@ -1,4 +1,5 @@
 extern "C" {
+
 __global__ void bruh() {
 
 }
@@ -9,4 +10,5 @@ double calc_pi(int iterations) {
     }
     return 3.14;
 }
+
 };
