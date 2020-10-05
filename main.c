@@ -52,7 +52,7 @@ int main(int argc, char *argv[]) {
     int option;
 
 #ifdef COMPILE_OPENMP
-    const char* opts = ":i:t:vh";
+    const char *opts = ":i:t:vh";
 #endif
 #ifdef COMPILE_CUDA
     const char *opts = ":i:b:vh";
@@ -75,16 +75,16 @@ int main(int argc, char *argv[]) {
             }
 #endif
 #ifdef COMPILE_CUDA
-            case 'b': {
-                char end_char;
-                char *end_ptr = &end_char;
-                batch_size = (int) strtol(optarg, &end_ptr, 10);
-                if (iterations < 0 || end_ptr != optarg + strlen(optarg)) {
-                    printf("Invalid batch size\n");
-                    return 1;
+                case 'b': {
+                    char end_char;
+                    char *end_ptr = &end_char;
+                    batch_size = (int) strtol(optarg, &end_ptr, 10);
+                    if (iterations < 0 || end_ptr != optarg + strlen(optarg)) {
+                        printf("Invalid batch size\n");
+                        return 1;
+                    }
+                    break;
                 }
-                break;
-            }
 #endif
             case 'i': {
                 char end_char;
@@ -110,37 +110,40 @@ int main(int argc, char *argv[]) {
             }
         }
     }
-    timekeeper_t timer;
-    starttimer(&timer);
-    double mypi;
+    calc_result_t result;
 #ifdef COMPILE_OPENMP
-    mypi = calc_pi(threads, iterations);
+    result = calc_pi(threads, iterations);
 #endif
 #ifdef COMPILE_CUDA
-    mypi = calc_pi(batch_size, iterations);
+    result = calc_pi(batch_size, iterations);
 #endif
-    stoptimer(&timer);
     if (!quiet) {
 #ifdef COMPILE_OPENMP
         printf("Performed %d iterations using %d threads.\n", iterations, threads);
 #endif
 #ifdef COMPILE_CUDA
         printf("Performed %d iterations using %d worksize.\n", iterations, batch_size);
+        printf("Memory allocation took %li.%06li seconds\n", result.alloc_time.seconds, result.alloc_time.nanos / 1000);
 #endif
-        printf("Computation took %li.%06li seconds\n", timer.seconds, timer.nanos / 1000);
-        printf("     MyPI = %.20lf\n", mypi);
-        printf("MyPI - PI = %.20lf\n", (mypi - PI));
+        printf("Calculation took %li.%06li seconds\n", result.calc_time.seconds, result.calc_time.nanos / 1000);
+        printf("Total time: %li.%06li seconds\n", result.total_time.seconds, result.total_time.nanos / 1000);
+        printf("     MyPI = %.20lf\n", result.pi_value);
+        printf("MyPI - PI = %.20lf\n", (result.pi_value - PI));
     } else {
         // Output format:
-        // With openmp: s.micros, iter, thrd, pi, diff
-        // With cuda: s.micros, iter, bsize, pi, diff
+        // With openmp: ts.tmicros, calcs.calcmicros, iter, thrd, pi, diff
+        // With cuda: ts.tmicros, calcs.calcmicros, atimes.atimemicros, iter, bsize, pi, diff
 #ifdef COMPILE_OPENMP
-        printf("%li.%06li, %d, %d, %.20lf, %.20lf\n", timer.seconds, timer.nanos / 1000, iterations, threads, mypi,
-               mypi - PI);
+        printf("%li.%06li, %li.%06li, %d, %d, %.20lf, %.20lf\n", result.total_time.seconds,
+               result.total_time.nanos / 1000, result.calc_time.seconds, result.calc_time.nanos / 1000, iterations,
+               threads, result.pi_value,
+               result.pi_value - PI);
 #endif
 #ifdef COMPILE_CUDA
-        printf("%li.%06li, %d, %d, %.20lf, %.20lf\n", timer.seconds, timer.nanos / 1000, iterations, batch_size, mypi,
-               mypi - PI);
+        printf("%li.%06li, %li.%06li, %li.%06li, %d, %d, %.20lf, %.20lf\n", result.total_time.seconds,
+               result.total_time.nanos / 1000, result.calc_time.seconds, result.calc_time.nanos / 1000,
+               result.alloc_time.seconds, result.alloc_time.nanos / 1000, iterations, batch_size, result.pi_value,
+               result.pi_value - PI);
 #endif
     }
 }
