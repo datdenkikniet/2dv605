@@ -17,15 +17,6 @@ typedef struct calc_result_t {
 
 struct calc_result_t calc_pi(int worksize, int iterations);
 
-void init_end_result(calc_result_t *result) {
-    result->total_time.seconds = 0;
-    result->total_time.nanos = 0;
-    result->alloc_time.seconds = 0;
-    result->alloc_time.nanos = 0;
-    result->dealloc_time.seconds = 0;
-    result->dealloc_time.nanos = 0;
-    result->calc_time.seconds = 0;
-    result->calc_time.nanos = 0;
-}
+void init_end_result(calc_result_t *result);
 
 #endif //INC_2DV605_CUDA_CALCPI_H

@@ -8,10 +8,10 @@ NVCCNL = $(NVCC) -c
 
 all: calcpi-openmp calcpi-cuda
 
-calcpi-cuda: cuda-main.o timer.o calcpi-cuda.o
+calcpi-cuda: cuda-main.o timer.o calcpi-cuda.o calcpi.o
 	$(NVCC) -o calcpi-cuda cuda-main.o timer.o calcpi-cuda.o
 
-calcpi-openmp: openmp-main.o timer.o calcpi-openmp.o
+calcpi-openmp: openmp-main.o timer.o calcpi-openmp.o calcpi.o
 	$(GCCOMP) -o calcpi-openmp openmp-main.o timer.o calcpi-openmp.o
 
 cuda-main.o: main.c
@@ -19,6 +19,9 @@ cuda-main.o: main.c
 
 openmp-main.o: main.c
 	$(GCCNLOMP) main.c -o openmp-main.o
+
+calcpi.o: calcpi.c
+	$(GCCNL) calcpi.c -o calcpi.o
 
 timer.o: timer.c
 	$(GCCNL) timer.c -o timer.o
