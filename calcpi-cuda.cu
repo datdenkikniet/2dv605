@@ -28,7 +28,7 @@ struct calc_result_t do_calcpi(int worksize, int iterations) {
     starttimer(&endResult.total_time);
 
     starttimer(&endResult.alloc_time);
-#define BLOCK_SIZE 256
+#define BLOCK_SIZE 792
     int BATCH_SIZE = worksize;
     int *device_offset;
     cudaMalloc(&device_offset, sizeof(int));
@@ -80,6 +80,8 @@ struct calc_result_t do_calcpi(int worksize, int iterations) {
     cudaFree(device_offset);
     free(host_pieparts);
     stoptimer(&endResult.dealloc_time);
+    stoptimer(&endResult.total_time);
+    endResult.pi_value = mypi;
 
     return endResult;
 }
@@ -88,4 +90,4 @@ struct calc_result_t calc_pi(int worksize, int iterations) {
     return do_calcpi(worksize, iterations);
 }
 
-};
+}
