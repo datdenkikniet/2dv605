@@ -22,6 +22,7 @@ calc_result_t calc_pi(int worksize, int iterations) {
 
     mypi *= m;
     endResult.pi_value = mypi;
+    stoptimer(&endResult.calc_time);
     stoptimer(&endResult.total_time);
     return endResult;
 }
