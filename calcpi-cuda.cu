@@ -5,12 +5,10 @@ extern "C" {
 #include "timer.h"
 #include "calcpi.h"
 
-__global__ void pi_iter(const int *offset, const int *iterations, const double *m, double *pieparts) {
-    unsigned int index = blockIdx.x * blockDim.x + threadIdx.x + *offset;
-    if (index < *iterations) {
-        double n_i = ((double) index + 0.5) * *m;
-        pieparts[index - *offset] = 4.0 / (1.0 + n_i * n_i);
-    }
+__global__ void pi_iter(const int *offset, const double *m, double *pieparts) {
+    unsigned int index = blockIdx.x * blockDim.x + threadIdx.x;
+    double n_i = ((double) index + (double) *offset + 0.5) * *m;
+    pieparts[index] = 4.0 / (1.0 + n_i * n_i);
 }
 
 __global__ void add(double *values, const int offset, const int max) {
@@ -32,10 +30,6 @@ struct calc_result_t do_calcpi(int worksize, int iterations) {
     int BATCH_SIZE = worksize;
     int *device_offset;
     cudaMalloc(&device_offset, sizeof(int));
-
-    int *device_iterations;
-    cudaMalloc(&device_iterations, sizeof(int));
-    cudaMemcpy(&iterations, device_iterations, sizeof(int), cudaMemcpyHostToDevice);
 
     double *device_pieparts;
     cudaMalloc(&device_pieparts, sizeof(double) * BATCH_SIZE);
@@ -60,7 +54,7 @@ struct calc_result_t do_calcpi(int worksize, int iterations) {
         }
         cudaMemcpy(device_offset, &i, sizeof(int), cudaMemcpyHostToDevice);
         int blocks = (BATCH_SIZE / BLOCK_SIZE);
-        pi_iter<<<blocks, BLOCK_SIZE>>>(device_offset, device_iterations, device_m, device_pieparts);
+        pi_iter<<<blocks, BLOCK_SIZE>>>(device_offset, device_m, device_pieparts);
         int offset = 1;
         do {
             add<<<blocks, BLOCK_SIZE>>>(device_pieparts, offset, actualSize);
@@ -75,7 +69,6 @@ struct calc_result_t do_calcpi(int worksize, int iterations) {
     stoptimer(&endResult.calc_time);
     starttimer(&endResult.dealloc_time);
     cudaFree(device_pieparts);
-    cudaFree(device_iterations);
     cudaFree(device_m);
     cudaFree(device_offset);
     free(host_pieparts);
