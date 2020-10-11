@@ -49,11 +49,11 @@ struct calc_result_t do_calcpi(int worksize, int iterations) {
     for (int i = 0; i < iterations; i += BATCH_SIZE) {
         cudaMemset(device_pieparts, 0, sizeof(double) * BATCH_SIZE);
         int actualSize = BATCH_SIZE;
-        if (actualSize > (iterations - i)) {
+        if (i + BATCH_SIZE > iterations) {
             actualSize = iterations - i;
         }
         cudaMemcpy(device_offset, &i, sizeof(int), cudaMemcpyHostToDevice);
-        int blocks = (BATCH_SIZE / BLOCK_SIZE);
+        int blocks = (BATCH_SIZE / BLOCK_SIZE) + 1;
         pi_iter<<<blocks, BLOCK_SIZE>>>(device_offset, device_m, device_pieparts);
         int offset = 1;
         do {
@@ -62,7 +62,6 @@ struct calc_result_t do_calcpi(int worksize, int iterations) {
         } while (offset < actualSize);
         double mypi_storage;
         cudaMemcpy(&mypi_storage, device_pieparts, sizeof(double), cudaMemcpyDeviceToHost);
-
         mypi += mypi_storage * m;
     }
 
