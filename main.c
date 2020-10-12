@@ -18,7 +18,7 @@
 // causing lots of memory-waiting. Run tests!
 
 const int default_iterations = 192000000;
-const int default_batch_size = 1000000;
+const int default_blocks_per_grid = 140;
 
 void print_help(char *cmd) {
 #ifdef COMPILE_OPENMP
@@ -36,7 +36,7 @@ void print_help(char *cmd) {
            "          Default: amount of threads available on the system (Here: %d)\n", omp_get_max_threads());
 #endif
 #ifdef COMPILE_CUDA
-    printf("-b [num]  Set the batch size for this program. Default: %d\n", default_batch_size);
+    printf("-b [num]  Set the batch size for this program. Default: %d\n", default_blocks_per_grid);
 #endif
 }
 
@@ -45,7 +45,7 @@ int main(int argc, char *argv[]) {
     int threads = omp_get_max_threads();
 #endif
 #ifdef COMPILE_CUDA
-    int batch_size = default_batch_size;
+    int batch_size = default_blocks_per_grid;
 #endif
     int iterations = default_iterations;
     int quiet = 1;
