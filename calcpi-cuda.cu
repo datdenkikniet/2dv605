@@ -55,10 +55,13 @@ struct calc_result_t do_calcpi(int blocks_per_grid, int iterations) {
 
     pi_iter<<<GRIDS, BLOCKS>>>(perThread, iterations, device_m, device_pieparts);
     cudaMemcpy(host_pieparts, device_pieparts, sizeof(double) * batch_size, cudaMemcpyDeviceToHost);
+    int offset = 1;
+    do {
+        add<<<GRIDS, BLOCKS>>>(device_pieparts, offset, batch_size);
+        offset *= 2;
+    } while (offset < batch_size);
     double mypi;
-    for (int i = 0; i < batch_size; i++) {
-        mypi += host_pieparts[i];
-    }
+    cudaMemcpy(&mypi, device_pieparts, sizeof(double), cudaMemcpyDeviceToHost);
     stoptimer(&endResult.calc_time);
     starttimer(&endResult.dealloc_time);
     cudaFree(device_pieparts);
