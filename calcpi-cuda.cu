@@ -5,10 +5,13 @@ extern "C" {
 #include "timer.h"
 #include "calcpi.h"
 
-__global__ void pi_iter(const int *offset, const double *m, double *pieparts) {
+__global__ void pi_iter(const unsigned int count, const unsigned int max, const double *m, double *pieparts) {
     unsigned int index = blockIdx.x * blockDim.x + threadIdx.x;
-    double n_i = ((double) index + (double) *offset + 0.5) * *m;
-    pieparts[index] = 4.0 / (1.0 + n_i * n_i);
+    for (unsigned int i = count * index; i < count * (index + 1) && i < max; i++) {
+        double n_i = ((double) i + 0.5) * *m;
+        pieparts[index] += 4.0 / (1.0 + n_i * n_i);
+    }
+    pieparts[index] *= *m;
 }
 
 __global__ void add(double *values, const int offset, const int max) {
@@ -24,17 +27,21 @@ struct calc_result_t do_calcpi(int worksize, int iterations) {
     init_end_result(&endResult);
 
     starttimer(&endResult.total_time);
+#define GRIDS 1024
+#define BLOCKS 140
 
     starttimer(&endResult.alloc_time);
-#define BLOCK_SIZE 792
-    int BATCH_SIZE = worksize;
+    int batch_size = GRIDS * BLOCKS;
+
+    unsigned int perThread = (iterations + batch_size) / batch_size;
+
     int *device_offset;
     cudaMalloc(&device_offset, sizeof(int));
 
     double *device_pieparts;
-    cudaMalloc(&device_pieparts, sizeof(double) * BATCH_SIZE);
+    cudaMalloc(&device_pieparts, sizeof(double) * batch_size);
 
-    double *host_pieparts = (double *) malloc(sizeof(double) * BATCH_SIZE);
+    double *host_pieparts = (double *) malloc(sizeof(double) * batch_size);
 
     double m = 1.0 / (double) iterations;
 
@@ -44,27 +51,13 @@ struct calc_result_t do_calcpi(int worksize, int iterations) {
 
     stoptimer(&endResult.alloc_time);
     starttimer(&endResult.calc_time);
-    double mypi = 0.0;
 
-    for (int i = 0; i < iterations; i += BATCH_SIZE) {
-        cudaMemset(device_pieparts, 0, sizeof(double) * BATCH_SIZE);
-        int actualSize = BATCH_SIZE;
-        if (i + BATCH_SIZE > iterations) {
-            actualSize = iterations - i;
-        }
-        cudaMemcpy(device_offset, &i, sizeof(int), cudaMemcpyHostToDevice);
-        int blocks = (BATCH_SIZE / BLOCK_SIZE) + 1;
-        pi_iter<<<blocks, BLOCK_SIZE>>>(device_offset, device_m, device_pieparts);
-        int offset = 1;
-        do {
-            add<<<blocks, BLOCK_SIZE>>>(device_pieparts, offset, actualSize);
-            offset *= 2;
-        } while (offset < actualSize);
-        double mypi_storage;
-        cudaMemcpy(&mypi_storage, device_pieparts, sizeof(double), cudaMemcpyDeviceToHost);
-        mypi += mypi_storage * m;
+    pi_iter<<<GRIDS, BLOCKS>>>(perThread, iterations, device_m, device_pieparts);
+    cudaMemcpy(host_pieparts, device_pieparts, sizeof(double) * batch_size, cudaMemcpyDeviceToHost);
+    double mypi;
+    for (int i = 0; i < batch_size; i++) {
+        mypi += host_pieparts[i];
     }
-
     stoptimer(&endResult.calc_time);
     starttimer(&endResult.dealloc_time);
     cudaFree(device_pieparts);
