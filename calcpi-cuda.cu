@@ -27,8 +27,9 @@ struct calc_result_t do_calcpi(int worksize, int iterations) {
     init_end_result(&endResult);
 
     starttimer(&endResult.total_time);
+
 #define GRIDS 1024
-#define BLOCKS 140
+#define BLOCKS worksize
 
     starttimer(&endResult.alloc_time);
     int batch_size = GRIDS * BLOCKS;
