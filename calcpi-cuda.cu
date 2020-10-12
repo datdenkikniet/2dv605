@@ -22,14 +22,14 @@ __global__ void add(double *values, const int offset, const int max) {
     }
 }
 
-struct calc_result_t do_calcpi(int worksize, int iterations) {
+struct calc_result_t do_calcpi(int blocks_per_grid, int iterations) {
     calc_result_t endResult;
     init_end_result(&endResult);
 
     starttimer(&endResult.total_time);
 
 #define GRIDS 1024
-#define BLOCKS worksize
+#define BLOCKS blocks_per_grid
 
     starttimer(&endResult.alloc_time);
     int batch_size = GRIDS * BLOCKS;
@@ -72,8 +72,8 @@ struct calc_result_t do_calcpi(int worksize, int iterations) {
     return endResult;
 }
 
-struct calc_result_t calc_pi(int worksize, int iterations) {
-    return do_calcpi(worksize, iterations);
+struct calc_result_t calc_pi(int blocks_per_grid, int iterations) {
+    return do_calcpi(blocks_per_grid, iterations);
 }
 
 }
