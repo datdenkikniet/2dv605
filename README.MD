@@ -1,1 +1,1 @@
-![Bruh image](htt://localhost:8080/test/master/)
+![Bruh image](http://localhost:8080/buildStatus/icon?job=test)
